@@ -155,4 +155,4 @@ async def test_battery_mode_changes_virtual_surplus(
     with patch("homeassistant.core.StateMachine.get", side_effect=side_effects.get_side_effects()):
         await coordinator._async_update_data()
         await hass.async_block_till_done()
-        assert (hass.states.get("input_boolean.fake_device_a").state == STATE_ON) is is_activated
+        assert (hass.states.get("input_boolean.fake_device_a").state == STATE_ON) == is_activated
