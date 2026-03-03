@@ -59,6 +59,12 @@ central_config_schema = vol.Schema(
         vol.Optional(CONF_BATTERY_CHARGE_POWER_ENTITY_ID): selector.EntitySelector(
             selector.EntitySelectorConfig(domain=[SENSOR_DOMAIN, INPUT_NUMBER_DOMAIN])
         ),
+        vol.Optional(CONF_BATTERY_MODE, default=BATTERY_MODE_FIRST): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=BATTERY_MODES,
+                mode="dropdown",
+            )
+        ),
         vol.Optional(CONF_RAZ_TIME, default=DEFAULT_RAZ_TIME): str,
     }
 )
