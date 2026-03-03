@@ -75,6 +75,7 @@ CONF_CONVERT_POWER_DIVIDE_FACTOR = "convert_power_divide_factor"
 CONF_RAZ_TIME = "raz_time"
 CONF_BATTERY_SOC_ENTITY_ID = "battery_soc_entity_id"
 CONF_BATTERY_CHARGE_POWER_ENTITY_ID = "battery_charge_power_entity_id"
+CONF_BATTERY_MODE = "battery_mode"
 CONF_BATTERY_SOC_THRESHOLD = "battery_soc_threshold"
 CONF_MAX_ON_TIME_PER_DAY_MIN = "max_on_time_per_day_min"
 CONF_MIN_ON_TIME_PER_DAY_MIN = "min_on_time_per_day_min"
@@ -123,6 +124,10 @@ PRIORITY_MAP = {
     PRIORITY_HIGH: 2,
     PRIORITY_VERY_HIGH: 1,
 }
+
+BATTERY_MODE_FIRST = "battery_first"
+BATTERY_MODE_LAST = "battery_last"
+BATTERY_MODES = [BATTERY_MODE_FIRST, BATTERY_MODE_LAST]
 
 
 _LOGGER = logging.getLogger(__name__)

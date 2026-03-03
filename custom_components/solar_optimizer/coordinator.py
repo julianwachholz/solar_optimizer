@@ -67,6 +67,7 @@ class SolarOptimizerCoordinator(DataUpdateCoordinator):
         self._last_production: float = 0.0
         self._battery_soc_entity_id: str = None
         self._battery_charge_power_entity_id: str = None
+        self._battery_mode: str = "battery_first"
         self._raz_time: time = None
 
         self._central_config_done = False
@@ -121,6 +122,7 @@ class SolarOptimizerCoordinator(DataUpdateCoordinator):
         self._battery_charge_power_entity_id = config.data.get(
             "battery_charge_power_entity_id"
         )
+        self._battery_mode = config.data.get("battery_mode", "battery_first")
         self._smooth_production = config.data.get("smooth_production") is True
         self._last_production = 0.0
 
@@ -191,12 +193,16 @@ class SolarOptimizerCoordinator(DataUpdateCoordinator):
 
         calculated_data["priority_weight"] = self.priority_weight
 
+        net_power_consumption = calculated_data["power_consumption"]
+        if self._battery_mode == "battery_last":
+            net_power_consumption += calculated_data["battery_charge_power"]
+
         #
-        # Call Algorithm Recuit simulé
+        # Call deterministic priority cascade
         #
         best_solution, best_objective, total_power = self._algo.recuit_simule(
             self._devices,
-            calculated_data["power_consumption"] + calculated_data["battery_charge_power"],
+            net_power_consumption,
             calculated_data["power_production"],
             calculated_data["sell_cost"],
             calculated_data["buy_cost"],
@@ -211,6 +217,7 @@ class SolarOptimizerCoordinator(DataUpdateCoordinator):
 
         # Uses the result to turn on or off or change power
         should_log = False
+        action_executed = False
         for _, equipement in enumerate(best_solution):
             name = equipement["name"]
             requested_power = equipement.get("requested_power")
@@ -228,11 +235,13 @@ class SolarOptimizerCoordinator(DataUpdateCoordinator):
             if is_active and not state and not should_force_offpeak:
                 _LOGGER.debug("Extinction de %s", name)
                 should_log = True
+                action_executed = True
                 old_requested_power = 0
                 await device.deactivate()
             elif not is_active and (state or should_force_offpeak):
                 _LOGGER.debug("Allumage de %s", name)
                 should_log = True
+                action_executed = True
                 old_requested_power = requested_power
                 await device.activate(requested_power)
 
@@ -248,12 +257,19 @@ class SolarOptimizerCoordinator(DataUpdateCoordinator):
                     requested_power,
                 )
                 should_log = True
+                action_executed = True
                 await device.change_requested_power(requested_power)
 
             device.set_requested_power(old_requested_power)
 
             # Add updated data to the result
             calculated_data[name_to_unique_id(name)] = device
+            if action_executed:
+                break
+
+        if action_executed:
+            for device in self._devices:
+                calculated_data[name_to_unique_id(device.name)] = device
 
         if should_log:
             _LOGGER.info("Calculated data are: %s", calculated_data)
